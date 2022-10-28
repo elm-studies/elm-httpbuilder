@@ -7,6 +7,6 @@ services:
       context: .
     volumes:
       - .:/app/elm-app
-    container_name: elm-app
+    container_name: elm-commands
     ports:
-      - 3000:3000
+      - 1500:3000
