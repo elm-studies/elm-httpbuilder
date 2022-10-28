@@ -1,0 +1,12 @@
+version: "0.1"
+name: elm_app
+services:
+  Frontend:
+    image: elm-app
+    build:
+      context: .
+    volumes:
+      - .:/app/elm-app
+    container_name: elm-app
+    ports:
+      - 3000:3000
