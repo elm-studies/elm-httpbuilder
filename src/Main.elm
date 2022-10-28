@@ -34,6 +34,14 @@ type Msg
     | NewFactArrived (Result Http.Error String)
 
 
+getFromApi : String -> Cmd Msg
+getFromApi inputValue =
+    Http.get
+        { url = "https://jsonplaceholder.typicode.com/posts/" ++ inputValue
+        , expect = Http.expectString NewFactArrived
+        }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -41,17 +49,7 @@ update msg model =
             ( Model "NumbersApi typing.." "" newInput, Cmd.none )
 
         ShowFacts ->
-            let
-                url =
-                    "https://jsonplaceholder.typicode.com/todos/" ++ model.input
-
-                sendRequest =
-                    Http.get
-                        { url = url
-                        , expect = Http.expectString NewFactArrived
-                        }
-            in
-            ( model, sendRequest )
+            ( model, getFromApi model.input )
 
         NewFactArrived (Ok fact) ->
             ( Model "NumbersApi" fact model.input, Cmd.none )
