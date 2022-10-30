@@ -5,6 +5,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
+import HttpBuilder
+import Json.Decode as D exposing (Decoder)
 
 
 
@@ -15,6 +17,18 @@ type alias Model =
     { heading : String
     , factText : String
     , input : String
+    , dummy_id : Int
+    , dummy_userId : Int
+    , dummy_title : String
+    , dummy_body : String
+    }
+
+
+type alias DummyUser =
+    { id : Int
+    , userId : Int
+    , title : String
+    , body : String
     }
 
 
@@ -23,6 +37,10 @@ init =
     ( { heading = "Cat Facts"
       , factText = "Click the button to get a cat fact"
       , input = ""
+      , dummy_id = 0
+      , dummy_userId = 0
+      , dummy_title = ""
+      , dummy_body = ""
       }
     , Cmd.none
     )
@@ -31,31 +49,78 @@ init =
 type Msg
     = ShowFacts
     | Input String
-    | NewFactArrived (Result Http.Error String)
+    | DummyUserArrived DummyUser
+    | NoOp
+
+
+userInformationDecoder : Decoder DummyUser
+userInformationDecoder =
+    D.map4
+        DummyUser
+        (D.field "userId" D.int)
+        (D.field "id" D.int)
+        (D.field "title" D.string)
+        (D.field "body" D.string)
+
+
+handleFetchUserRequest : Result Http.Error DummyUser -> Msg
+handleFetchUserRequest result =
+    let
+        o =
+            case result of
+                Ok user ->
+                    user
+
+                Err _ ->
+                    { id = 0
+                    , userId = 0
+                    , title = ""
+                    , body = ""
+                    }
+    in
+    DummyUserArrived o
 
 
 getFromApi : String -> Cmd Msg
 getFromApi inputValue =
-    Http.get
-        { url = "https://jsonplaceholder.typicode.com/posts/" ++ inputValue
-        , expect = Http.expectString NewFactArrived
-        }
+    let
+        url =
+            "https://jsonplaceholder.typicode.com/posts/" ++ inputValue
+    in
+    HttpBuilder.get url
+        |> HttpBuilder.withExpect
+            (Http.expectJson handleFetchUserRequest
+                userInformationDecoder
+            )
+        |> HttpBuilder.request
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Input newInput ->
-            ( Model "NumbersApi typing.." "" newInput, Cmd.none )
+            ( { model
+                | input = newInput
+                , factText = "NumbersApi is typing..."
+              }
+            , Cmd.none
+            )
 
         ShowFacts ->
             ( model, getFromApi model.input )
 
-        NewFactArrived (Ok fact) ->
-            ( Model "NumbersApi" fact model.input, Cmd.none )
+        DummyUserArrived user ->
+            ( { model
+                | dummy_id = user.id
+                , dummy_userId = user.userId
+                , dummy_title = user.title
+                , dummy_body = user.body
+              }
+            , Cmd.none
+            )
 
-        NewFactArrived (Err _) ->
-            ( Model model.input "not valid value" "", Cmd.none )
+        NoOp ->
+            ( model, Cmd.none )
 
 
 
@@ -70,6 +135,8 @@ view model =
         , button [ onClick ShowFacts ] [ text "show facts" ]
         , br [] []
         , h3 [] [ text model.factText ]
+        , p [] [ text (String.fromInt model.dummy_userId) ]
+        , p [] [ text model.dummy_body ]
         ]
 
 
