@@ -7,6 +7,6 @@ services:
       context: .
     volumes:
       - .:/app/elm-app
-    container_name: elm-commands
+    container_name: elm-http-builder
     ports:
-      - 1500:3000
+      - 2300:3000
